@@ -34,7 +34,6 @@ def __flood_fill_edge(image, x, y, cpoints):
         return
     image[x][y] = 10
     cpoints.append((x*5,(GRID_SIZE*5)-y*5))
-    print (x,y)
     for (s, t) in ((x+1, y), (x-1, y), (x, y+1), (x, y-1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)):
         __flood_fill_edge(image, s, t, cpoints)
 
@@ -43,12 +42,12 @@ floody = 130
 floodfill = []
 cpoints = []
 bas = np.reshape(ba, (GRID_SIZE, GRID_SIZE))
-__flood_fill(bas, floodx, floody, 0, cpoints)
+__flood_fill(bas, floodx, floody, 1, cpoints)
 bas[floodx][floody] = 24
 ba = np.hstack(bas)
 
 anggrid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=np.int)
-
+anggrid.fill(-1)
 #Order the points
 #Go over each edge point and get the direction to the white space
 for pt in cpoints:
@@ -60,24 +59,30 @@ for pt in cpoints:
         if bas[s][t]==2:
             dirs.append(dir)
         dir += 45
-    anggrid[x][y] = np.mean(dirs)
-    print (x, y), ": ", anggrid[x][y]
+    if len(dirs) == 0:
+        continue
+    xf=yf=0
+    for angle in dirs:
+        xf+=math.cos(math.radians(angle))
+        yf+=math.sin(math.radians(angle))
+    avga = math.degrees(math.atan2(yf,xf))
+    anggrid[x][y] = avga
 
-output = "["
-y = 0
+output = "{"
+y = len(anggrid)-1
 for row in anggrid:
-    x = 0
-    output += "["
+    x = len(row)-1
+    output += "{"
     for col in row:
         output += str(anggrid[x][y])
-        if x < GRID_SIZE-1:
+        if x > 0:
             output += ","
-        x+=1
-    output += "]"
-    if y < GRID_SIZE-1:
+        x-=1
+    output += "}"
+    if y > 0:
         output += ","
-    y+=1
-output += "]"
+    y-=1
+output += "}"
 with open('anggrid.txt', 'w') as output_file:
     output_file.write(output)
 
@@ -110,7 +115,7 @@ class GNVVis(tk.Frame):
         self.canvas.delete("square")
         i = len(ba)-1
         for row in range(self.rows):
-            for col in range(self.columns):
+            for col in reversed(range(self.columns)):
                 if ba[i]==3:
                     color = "orange"
                 elif (ba[i]==2):
